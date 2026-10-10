@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { timeSlots } from '../data/timeSlots';
 import { MedicalIcon } from './MedicalIcon';
-import { supabase } from '../supabaseClient';
+import { db } from '../db';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
@@ -175,10 +175,7 @@ export const AppointmentForm = ({ onAddAppointment, managedDoctors = [], appoint
                 attended: false
             };
 
-            const { data, error } = await supabase
-                .from('appointments')
-                .insert([insertData])
-                .select();
+            const { data, error } = await db.insertAppointment(insertData);
 
             if (error) throw error;
 

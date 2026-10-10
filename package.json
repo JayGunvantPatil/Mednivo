@@ -12,7 +12,6 @@
   "dependencies": {
     "@neondatabase/neon-js": "^0.7.0-beta",
     "@neondatabase/serverless": "^1.1.0",
-    "@supabase/supabase-js": "^2.115.0",
     "cors": "^2.8.6",
     "date-fns": "^4.4.0",
     "dotenv": "^17.4.2",

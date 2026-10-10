@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MedicalIcon } from './MedicalIcon';
 import { timeSlots } from '../data/timeSlots';
-import { supabase } from '../supabaseClient';
+import { db } from '../db';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
@@ -126,23 +126,10 @@ export const AdminDashboard = ({
     const handleRemovePatientData = async (id) => {
         try {
             const stringId = String(id);
-            // Primary standard library wipe
-            const { error } = await supabase.from('appointments').delete().eq('id', stringId);
+            const { error } = await db.deleteAppointment(stringId);
 
             if (error) {
-                console.error("Standard delete failed, engaging manual REST override:", error);
-            }
-
-            // Backup direct HTTP manual extraction completely bypassing the native wrappers 
-            try {
-                const url = `https://fwlgqhjytzqtbwnawveu.supabase.co/rest/v1/appointments?id=eq.${stringId}`;
-                const key = 'sb_publishable_kBRbWRsJxxf7WhsiQVZ88w_tx1OM9U4';
-                await fetch(url, {
-                    method: 'DELETE',
-                    headers: { 'apikey': key, 'Authorization': `Bearer ${key}` }
-                });
-            } catch (e) {
-                console.error("HTTP override failed:", e);
+                console.error("Db delete failed:", error);
             }
 
             // Immediately visually clear from the frontend to preserve instantaneous UX
@@ -176,7 +163,7 @@ export const AdminDashboard = ({
     const handleAddDoctor = async (e) => {
         e.preventDefault();
         if (!newDoctor.name.trim()) return;
-        const { data, error } = await supabase.from('doctors').insert([newDoctor]).select();
+        const { data, error } = await db.insertDoctor(newDoctor);
         if (error) { console.error('Add doc error:', error); return; }
         if (data && data[0]) {
             setManagedDoctors([...managedDoctors, data[0]]);
@@ -188,7 +175,7 @@ export const AdminDashboard = ({
         e.preventDefault();
         const docToUpdate = managedDoctors.find(d => d.id === id);
         const { id: _, created_at, ...updatePayload } = docToUpdate;
-        const { error } = await supabase.from('doctors').update(updatePayload).eq('id', id);
+        const { error } = await db.updateDoctor(id, updatePayload);
         if (error) { console.error('Update doc error:', error); return; }
         setEditingDoctorId(null);
     };
@@ -196,7 +183,7 @@ export const AdminDashboard = ({
     const handleDeleteDoctor = async (id) => {
         if (window.confirm('Remove this doctor profile?')) {
             setManagedDoctors(managedDoctors.filter(d => d.id !== id));
-            await supabase.from('doctors').delete().eq('id', id);
+            await db.deleteDoctor(id);
         }
     };
 
@@ -296,16 +283,13 @@ export const AdminDashboard = ({
     const saveReschedule = async () => {
         if (!rescheduleData.date || !rescheduleData.time) return;
 
-        // Update Supabase Database
-        const { error } = await supabase
-            .from('appointments')
-            .update({
-                appointment_date: rescheduleData.date,
-                appointment_time: rescheduleData.time,
-                status: 'Scheduled',
-                attended: false
-            })
-            .eq('id', rescheduleData.id);
+        // Update Database
+        const { error } = await db.updateAppointment(rescheduleData.id, {
+            appointment_date: rescheduleData.date,
+            appointment_time: rescheduleData.time,
+            status: 'Scheduled',
+            attended: false
+        });
 
         if (error) {
             console.error('Error rescheduling:', error);

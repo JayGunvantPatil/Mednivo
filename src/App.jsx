@@ -6,7 +6,7 @@ import LoginPanel from './components/LoginPanel';
 import AdminDashboard from './components/AdminDashboard';
 import { MedicalIcon } from './components/MedicalIcon';
 import { About } from './components/About';
-import { supabase } from './supabaseClient';
+import { db } from './db';
 import icuHero from './assets/icu.jpg';
 import './App.css';
 
@@ -24,8 +24,8 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('All');
   useEffect(() => {
-    supabase.from('doctors').select('*').then(({ data, error }) => { if (!error && data) setManagedDoctors(data) });
-    supabase.from('appointments').select('*').order('created_at', { ascending: false }).then(({ data, error }) => { if (!error && data) setAppointments(data) });
+    db.getDoctors().then(({ data, error }) => { if (!error && data) setManagedDoctors(data) });
+    db.getAppointments().then(({ data, error }) => { if (!error && data) setAppointments(data) });
   }, []);
 
 
